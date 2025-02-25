@@ -21,7 +21,12 @@ export default function Home() {
       setMessages((prev) => [...prev, { sender: "system", message}]);
     })
 
+    socket.on("user_disconnect", (message) =>{
+      setMessages((prev) => [...prev, { sender: "system", message}]);
+    })
+
     return () => {
+      socket.off("user_disconnect");
       socket.off("user_joined");
       socket.off("message");
     }
@@ -33,17 +38,26 @@ export default function Home() {
     socket.emit("message", data);
   }
 
-  // const handleUserJoined = (message: string) => {
-  //   setMessages((prev) => [...prev, {sender: "system", message}])
-  //   console.log(message)
-  // }
-
   const handleJoinRoom = () => {
     if(room && userName) {
       socket.emit("join-room", { room, username: userName });
-      setJoined(true)
+      setJoined(true);
     }
   }
+ 
+  const handleDisconnect = () => {
+    if (room && userName) {
+        socket.emit("user-disconn", { room, username: userName });
+        console.log("Chamando desconexão");
+        setJoined(false); // Alterar o estado para indicar que o usuário saiu da sala
+        // Adicionar uma mensagem de sistema informando que o usuário se desconectou
+        setMessages((prev) => [
+            ...prev,
+            { sender: "system", message: `${userName} saiu da sala` },
+        ]);
+    }
+
+}
 
   return (
     <div className="flex mt-24 justify-center w-full">
@@ -84,7 +98,7 @@ export default function Home() {
               />
             ))}
           </div>
-          <ChatForm onSendMessage={handleSendMessage} />
+          <ChatForm onSendMessage={handleSendMessage} disconnected={handleDisconnect} />
         </div>
       )}
 

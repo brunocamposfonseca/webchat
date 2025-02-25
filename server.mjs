@@ -21,19 +21,26 @@ app.prepare().then(() =>{
             console.log(`${username} joined room: ${room}`);
             socket.to(room).emit("user_joined", `${username} joined the room `)
         });
+        
+        connectionStateRecovery: {
+            socket.on("message", ({room, message, sender}) => {
+                console.log(`Message from ${sender} in room ${room}: ${message}`);
+                socket.to(room).emit("message", { sender, message });
+            })
+        }
 
-        socket.on("message", ({room, message, sender}) => {
-            console.log(`Message from ${sender} in room ${room}: ${message}`);
-            socket.to(room).emit("message", { sender, message });
-        })
-
-        socket.on("disconnect", () => {
-            console.log(`user disconnected: ${socket.id}`);
+        socket.on("user-disconn", ({ room, username }) => {
+            console.log(`O usuário ${username} desconectou-se da sala: ${room}`);
+            socket.to(room).emit("user-disconn", `${username} desconectou-se da sala.`);
+            socket.leave(room);
+            socket.emit("disconnect");
         });
+        
     });
 
-
-
+    io.on("disconnect", (socket) => {
+        socket.disconnect();
+    });
     
 
     httpServer.listen(port, () => {
